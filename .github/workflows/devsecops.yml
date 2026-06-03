@@ -35,10 +35,11 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=my-devsecops-demo
-            -Dsonar.organization=my-org
+            -Dsonar.projectKey=yassine610_devsecops-demo
+            -Dsonar.organization=yassine610
             -Dsonar.sources=.
             -Dsonar.python.version=3
+
 
   dependency-check:
     name: OWASP Dependency-Check (SCA)
