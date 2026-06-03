@@ -1,8 +1,9 @@
-# [VULN] DÉPENDANCE VULNÉRABLE - OWASP Dependency-Check
-# Utilisation d'une ancienne version de Flask avec des CVE connues
-Flask==1.1.4
-MarkupSafe==2.0.1
-Werkzeug==1.0.1
-Jinja2==2.11.3
-itsdangerous==1.1.0
-click==7.1.2
+# [FIX] DÉPENDANCES SÉCURISÉES - OWASP Dependency-Check passera au vert
+# Utilisation des versions récentes et patchées des librairies
+Flask==3.0.3
+MarkupSafe==2.1.5
+Werkzeug==3.0.3
+Jinja2==3.1.4
+itsdangerous==2.2.0
+click==8.1.7
+blinker==1.8.2
