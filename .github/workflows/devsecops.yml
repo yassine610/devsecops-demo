@@ -1,0 +1,86 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  gitleaks:
+    name: Gitleaks (Secret Detection)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # continue-on-error: false blocks the pipeline if a secret is found
+
+  sonarcloud:
+    name: SonarCloud (SAST)
+    runs-on: ubuntu-latest
+    needs: gitleaks
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=my-devsecops-demo
+            -Dsonar.organization=my-org
+            -Dsonar.sources=.
+            -Dsonar.python.version=3
+
+  dependency-check:
+    name: OWASP Dependency-Check (SCA)
+    runs-on: ubuntu-latest
+    needs: sonarcloud
+    steps:
+      - uses: actions/checkout@v3
+      - name: Depcheck
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'devsecops-demo'
+          path: '.'
+          format: 'HTML'
+      - name: Upload Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-check-report
+          path: reports/dependency-check-report.html
+
+  trivy:
+    name: Trivy (Container Scanning)
+    runs-on: ubuntu-latest
+    needs: dependency-check
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build an image from Dockerfile
+        run: |
+          docker build -t devsecops-demo:${{ github.sha }} .
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'devsecops-demo:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1' # Bloque le pipeline si des vulnérabilités sont trouvées
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  quality-gate:
+    name: Quality Gate Evaluation
+    runs-on: ubuntu-latest
+    needs: [trivy]
+    steps:
+      - name: Quality Gate Status
+        run: echo "DevSecOps Pipeline completed successfully (or failed appropriately if vulns were caught)."
