@@ -1,12 +1,11 @@
-import os
 from flask import Flask, request, render_template
 import sqlite3
 
 app = Flask(__name__)
 
-# [FIX] SECRET SÉCURISÉ - Gitleaks passera au vert
-# On n'écrit plus le secret dans le code. On le lit depuis l'environnement.
-AWS_SECRET_KEY = os.getenv("AWS_SECRET_KEY", "Secret-Non-Defini")
+# [VULN] SECRET HARDCODÉ - Gitleaks
+# Fake AWS secret key for demonstration purposes
+AWS_SECRET_KEY = "AKIAIOSFODNN7E1234BYYMTH2024" 
 
 def init_db():
     conn = sqlite3.connect('database.db')
@@ -25,13 +24,12 @@ def index():
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
-        # [FIX] FAILLE SAST CORRIGÉE - SonarCloud passera au vert
-        # Utilisation d'une requête "paramétrée" (le '?' protège contre l'injection SQL)
-        query = "SELECT * FROM users WHERE name = ?"
+        # [VULN] FAILLE SAST - SQL INJECTION - SonarCloud
+        # Requête SQL vulnérable par concaténation
+        query = f"SELECT * FROM users WHERE name = '{search_query}'"
         
         try:
-            # On passe search_query comme un paramètre sécurisé
-            c.execute(query, (search_query,))
+            c.execute(query)
             results = c.fetchall()
         except sqlite3.Error as e:
             results = [("Erreur base de données", str(e))]
@@ -42,4 +40,4 @@ def index():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='127.0.0.1', port=5000)
+    app.run(host='0.0.0.0', port=5000)
