@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 # [VULN] SECRET HARDCODÉ - Gitleaks
 # Fake AWS secret key for demonstration purposes
-# AWS_SECRET_KEY = "AKIAIOSFODNN7E1234BYYMTH2024" 
+
 
 def init_db():
     conn = sqlite3.connect('database.db')
